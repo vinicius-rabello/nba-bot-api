@@ -1,11 +1,4 @@
 def scrape_nba_task(date_str):
-    import sys
-    from pathlib import Path
-
-    root_dir = Path(__file__).resolve().parent.parent
-    sys.path.append(str(root_dir))
-    sys.path.append("/opt/airflow/scrapers")
-
     from scrapers.nba_scraper.nba_scraper import NbaScraper
     from scrapers.nba_scraper.utils import format_date, generate_game_id, get_month_from_date_string, month_num_to_name
     from scrapers.validation.validate_game import validate_game
@@ -104,3 +97,11 @@ def scrape_nba_task(date_str):
     except Exception as e:
         print(f"Erro durante a execução do scraper: {str(e)}")
         raise
+
+    finally:
+        # Ensure the scraper is properly closed
+        if scraper:
+            try:
+                scraper.quit()
+            except Exception:
+                pass
