@@ -3,6 +3,10 @@ from selenium import webdriver  # Importa o WebDriver do Selenium para controle 
 from selenium.webdriver.common.by import By  # Importa o localizador de elementos
 from selenium.common.exceptions import NoSuchElementException  # Para tratamento de exceções
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+import tempfile
+import os
+import shutil
 
 class NbaScraper(webdriver.Chrome):
     """
@@ -17,28 +21,63 @@ class NbaScraper(webdriver.Chrome):
         Args:
             driver_path (str): Caminho para o diretório onde está o driver do Chrome.
         """
+        # Create a unique temporary directory for user data
+        self.temp_dir = tempfile.mkdtemp()
+
         # Configura as opções do Chrome para ambiente Docker
         chrome_options = Options()
+        chrome_options.add_argument('--headless')  # Run in truly headless mode
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument("start-maximized")
-        chrome_options.add_argument("disable-infobars")
-        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-        chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        chrome_options.add_argument('--window-size=1920,1080')  # Set window size instead of maximize
+        chrome_options.add_argument('--disable-extensions')
+        chrome_options.add_argument('--disable-infobars')
+        chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+        chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+        chrome_options.add_argument(f'--user-data-dir={self.temp_dir}')
+        chrome_options.add_argument('--remote-debugging-port=9222')  # Add debugging port
         
-        # Inicializa o WebDriver
-        super(NbaScraper, self).__init__(options=chrome_options)
+        # Create service object for ChromeDriver
+        service = Service('/usr/bin/chromedriver')
         
-        self.implicitly_wait(5)  # Define um tempo de espera implícito de 5 segundos
-        self.minimize_window()  # Minimiza a janela do navegador para melhor desempenho
+        # Inicializa o WebDriver with service object
+        super(NbaScraper, self).__init__(options=chrome_options, service=service)
+        
+        self.implicitly_wait(10)  # Increase implicit wait time for Docker environment
+
+    def __del__(self):
+        """
+        Cleanup when the instance is garbage collected
+        """
+        try:
+            self.quit()
+        except Exception:
+            pass
+        
+        # Clean up the temporary directory
+        try:
+            if hasattr(self, 'temp_dir') and os.path.exists(self.temp_dir):
+                shutil.rmtree(self.temp_dir, ignore_errors=True)
+        except Exception:
+            pass
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
         Garante que o navegador seja fechado corretamente ao sair do contexto.
         """
         print("Closing the NbaScraper...")
-        self.quit()
+        try:
+            self.quit()
+        except Exception as e:
+            print(f"Error closing browser: {e}")
+        
+        # Clean up the temporary directory
+        try:
+            if os.path.exists(self.temp_dir):
+                shutil.rmtree(self.temp_dir, ignore_errors=True)
+        except Exception as e:
+            print(f"Error removing temporary directory: {e}")
 
     def land_first_page(self, url=const.BASE_URL):
         """Acessa a página inicial da NBA definida em `const.BASE_URL`."""
