@@ -13,8 +13,8 @@ def scrape(date: str):
     try:
         # Validate format
         datetime.strptime(date, "%Y-%m-%d")
-        games_df = scrape_nba_task(date)
-        return games_df.to_dict(orient="records")
+        games_json = scrape_nba_task(date)
+        return games_json
     except ValueError:
         return {"error": "Invalid date format. Use YYYY-MM-DD"}
     except Exception as e:
