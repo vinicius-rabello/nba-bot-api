@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    volumes:
+      - ./app:/app  # live reload
+    ports:
+      - "8000:10000"  # maps localhost:8000 to container:10000
