@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import hashlib
 
 def get_day_of_week_from_date_string(date_str):
@@ -118,3 +118,13 @@ def generate_game_id(date, home_team, away_team):
     """
     raw_id = f"{date}_{home_team}_{away_team}".lower().replace(" ", "_")
     return hashlib.sha1(raw_id.encode()).hexdigest()[:10]  # Hash curto para evitar IDs longos
+
+def format_game_time(game_time):
+    if "FINAL" in game_time:
+        return game_time
+    game_time, period = game_time.split(" ")[:2]
+    game_time = datetime.strptime(game_time, "%H:%M")
+    if period == "PM":
+        game_time = game_time + timedelta(hours=12)
+    game_time = game_time - timedelta(hours=3)  # Ajusta o horário para UTC-3 (Horário de Brasília)
+    return game_time.strftime("%H:%M")

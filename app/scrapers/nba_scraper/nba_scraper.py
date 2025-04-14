@@ -1,4 +1,5 @@
 import scrapers.nba_scraper.constants as const  # Importa as constantes definidas no módulo nba_scraper
+from scrapers.nba_scraper.utils import format_game_time # Importa funções utilitárias para formatação de data e hora
 from selenium import webdriver  # Importa o WebDriver do Selenium para controle do navegador
 from selenium.webdriver.common.by import By  # Importa o localizador de elementos
 from selenium.common.exceptions import NoSuchElementException  # Para tratamento de exceções
@@ -7,6 +8,7 @@ from selenium.webdriver.chrome.service import Service
 import tempfile
 import os
 import shutil
+from datetime import timedelta, datetime
 
 class NbaScraper(webdriver.Chrome):
     """
@@ -138,8 +140,12 @@ class NbaScraper(webdriver.Chrome):
         Returns:
             str: Horário do jogo ou status do evento.
         """
-        schedule_status_text = schedule_game.find_element(By.XPATH, ".//span[contains(@class, 'ScheduleStatusText')]")
-        return schedule_status_text.text
+        schedule_status_text = schedule_game.find_element(By.XPATH, ".//span[contains(@class, 'ScheduleStatusText')]").text
+        try:
+            schedule_game_time = format_game_time(schedule_status_text)
+            return schedule_game_time
+        except:
+            return schedule_status_text
 
     def get_schedule_game_broadcaster(self, schedule_game):
         """
