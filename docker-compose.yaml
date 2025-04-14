@@ -4,9 +4,9 @@ services:
   api:
     build: .
     volumes:
-      - ./app:/app  # live reload
+      - ./app:/app
     ports:
-      - "8000:10000"  # maps localhost:8000 to container:10000
+      - "8000:10000"
     env_file:
       - .env
 
